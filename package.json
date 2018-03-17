@@ -1,0 +1,23 @@
+{
+  "name": "@otter-co/js-thread",
+  "version": "0.0.1",
+  "description": "Run simple functions (without closures) against large-ish data-sets in seperate threads.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc -p ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/benotter/js-thread.git"
+  },
+  "author": "Ben Otter <benotter@me.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/benotter/js-thread/issues"
+  },
+  "homepage": "https://github.com/benotter/js-thread#readme",
+  "dependencies": {
+    "typescript": "^2.7.2"
+  }
+}
