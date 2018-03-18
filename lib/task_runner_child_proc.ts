@@ -8,7 +8,7 @@ const _self: { onmessage: ( e: MessageEvent ) => void, postMessage: ( data: any,
     }
 };
 
-TaskRunnerWorker( _self );
+TaskRunnerWorker( _self as any );
 
 process.on( 'message', ( data ) =>
 {

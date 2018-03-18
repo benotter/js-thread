@@ -1,6 +1,6 @@
 import { MessageTypes, Messages } from './task_runner_messages';
 
-export default ( self ) => 
+export default ( self = window[ 'self' ] ) => 
 {
     const dataStore: { [ dataName: string ]: any } = Object.create( null );
 
