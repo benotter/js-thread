@@ -12,7 +12,7 @@
         "tests/*.js"
     ],
     "scripts": {
-        "test": "jest --env=jsdom",
+        "test": "jest --env=jsdom --watchAll",
         "test-ci": "set CI=true && jest --env=jsdom --coverage --testResultsProcessor=\"jest-junit\" --coverageDirectory=\"coverage\"",
         "build-types": "dts-generator --project ./ --out types/js-thread.d.ts --name @otter-co/js-thread --exclude ./__tests__/** --exclude ./node_modules/** --exclude ./**/*.d.ts",
         "build": "tsc -p .",
