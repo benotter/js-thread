@@ -1,4 +1,5 @@
 # @otter-co/js-thread
+![Build Status](https://otter-co.visualstudio.com/_apis/public/build/definitions/5e420c24-636a-4715-b04b-91461c36d403/3/badge)
 
 Run simple functions (without closures) against large-ish data-sets in a seperate thread.
 
