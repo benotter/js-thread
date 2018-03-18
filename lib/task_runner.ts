@@ -1,7 +1,10 @@
+import { sep } from 'path';
+import { ChildProcess } from 'child_process';
 import * as uuid from 'uuid';
 import * as util from './util';
 import taskRunnerFunc from './task_runner_worker';
 import Mess, { MessageTypes } from './task_runner_messages';
+
 
 export type TQTask = {
     id: string,
@@ -15,12 +18,17 @@ export interface DataType
     length?: number;
 }
 
+export const enum TaskRunnerWorkerType
+{
+    WebWorker,
+    ChildProcess,
+}
+
 export class TaskRunner
 {
-    public taskWorker: Worker;
-    public data: { [ dataName: string ]: DataType } = {};
 
-    private taskQueue: Map<string, TQTask> = new Map<string, TQTask>();
+    public taskWorker: Worker | ChildProcess;
+    public data: { [ dataName: string ]: DataType } = {};
 
     public getDataType ( data )
     {
@@ -53,17 +61,54 @@ export class TaskRunner
         return localDat;
     }
 
+    private taskQueue: Map<string, TQTask> = new Map<string, TQTask>();
+
+    private workerType: TaskRunnerWorkerType;
+
+    private _childScriptPath = `${ __dirname }${ sep }task_runner_child_proc`;
+
     constructor ()
     {
-        this.taskWorker = new Worker( util.getFuncString<typeof taskRunnerFunc>( taskRunnerFunc ) );
+        if ( global[ 'Worker' ] )
+        {
+            this.workerType = TaskRunnerWorkerType.WebWorker;
 
-        this.taskWorker.onmessage = ( e ) => this.onMessage( e );
-        this.taskWorker.onerror = ( e ) => this.onError( e );
+            this.taskWorker = new Worker( util.getFuncString<typeof taskRunnerFunc>( taskRunnerFunc ) );
+
+            this.taskWorker.onmessage = ( e ) => this.onMessage( e );
+            this.taskWorker.onerror = ( e ) => this.onError( e );
+        }
+        else
+        {
+            this.workerType = TaskRunnerWorkerType.ChildProcess;
+
+            this.taskWorker = require( 'child_process' ).fork( this._childScriptPath );
+
+            ( this.taskWorker as ChildProcess ).on( 'message', ( data ) => this.onMessage( data as MessageEvent ) );
+            ( this.taskWorker as ChildProcess ).on( 'error', ( error ) => this.onError( { error } as ErrorEvent ) );
+        }
+    }
+
+    public stop ()
+    {
+        if ( this.workerType === TaskRunnerWorkerType.WebWorker )
+            ( this.taskWorker as Worker ).terminate();
+        else
+            ( this.taskWorker as ChildProcess ).kill();
+    }
+
+    public sendData ( mess: Mess.Base )
+    {
+        if ( this.workerType === TaskRunnerWorkerType.WebWorker )
+            ( this.taskWorker as Worker ).postMessage( mess );
+        else
+            ( this.taskWorker as ChildProcess ).send( mess );
     }
 
     private completeTask ( taskID, data )
     {
         let task = this.taskQueue.get( taskID );
+
         task.resolve( data );
         this.taskQueue.delete( taskID );
     }
@@ -85,7 +130,7 @@ export class TaskRunner
 
         if ( type === MessageTypes.Worker_TaskDone )
             this.completeTask( taskID, ( e.data as Mess.Worker_TaskDone ).returnData );
-        else if ( type === MessageTypes.Worker_TaskError )
+        else
             this.failTask( taskID, ( e.data as Mess.Worker_TaskError ).error );
     }
 
@@ -99,7 +144,7 @@ export class TaskRunner
             console.log( error, e, );
     }
 
-    public setData ( dataName: string, data: any[] | any | string | number | boolean ): Promise<any>
+    public setData ( dataName: string, data: any[] | any | string | number | boolean ): Promise<boolean>
     {
         return new Promise( ( res, rej ) =>
         {
@@ -112,7 +157,7 @@ export class TaskRunner
             this.data[ dataName ] = this.getDataType( data );
             this.taskQueue.set( task.id, task );
 
-            this.taskWorker.postMessage( {
+            this.sendData( {
                 type: MessageTypes.Host_SetData,
                 taskID: task.id,
                 dataName,
@@ -121,10 +166,16 @@ export class TaskRunner
         } );
     }
 
-    public getData<T = any>( dataName: string ): Promise<any>
+    public getData<T = any>( dataNames: string | string[] ): Promise<T[]>
     {
-        if ( this.data[ dataName ] === void 0 )
-            throw new ReferenceError( `Data with the name ${ dataName } does not exist` );
+        if ( !Array.isArray( dataNames ) )
+            dataNames = [ dataNames ];
+
+        dataNames.forEach( dn =>
+        {
+            if ( this.data[ dn ] === void 0 )
+                throw new ReferenceError( `Data with the name ${ dataNames } does not exist` );
+        } );
 
         return new Promise( ( res, rej ) =>
         {
@@ -136,18 +187,22 @@ export class TaskRunner
 
             this.taskQueue.set( task.id, task );
 
-            this.taskWorker.postMessage( {
+            this.sendData( {
                 type: MessageTypes.Host_GetData,
                 taskID: task.id,
-                dataName,
+                dataNames,
             } as Mess.Host_GetData );
         } );
     }
 
-    public runTask<T>( dataName: string, taskFunc: ( data: any ) => any ): Promise<T>
+    public runTask<T>( dataNames: string | string[], taskFunc: ( ...data: any[] ) => any ): Promise<T>
     {
-        if ( this.data[ dataName ] === void 0 )
-            throw new ReferenceError( `Data with the name ${ dataName } does not exist` );
+        if ( !Array.isArray( dataNames ) )
+            dataNames = [ dataNames ];
+
+        for ( let dN of dataNames )
+            if ( this.data[ dN ] === void 0 )
+                throw new ReferenceError( `Data with the name ${ dataNames } does not exist` );
 
         return new Promise( ( res, rej ) =>
         {
@@ -161,12 +216,12 @@ export class TaskRunner
 
             this.taskQueue.set( task.id, task );
 
-            this.taskWorker.postMessage( {
+            this.sendData( {
                 type: MessageTypes.Host_RunTask,
                 taskID: task.id,
-                dataName,
+                dataNames,
                 task: taskStr,
-            } );
+            } as Mess.Host_RunTask );
         } );
     }
 }

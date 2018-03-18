@@ -1,15 +1,5 @@
 import { MessageTypes, Messages } from '../lib/task_runner_messages';
 import { TaskRunner } from '../lib/task_runner';
-import { MockWorker, MockURL } from './mock_classes';
-
-if ( !global[ 'Worker' ] )
-    global[ 'Worker' ] = MockWorker;
-
-if ( !global[ 'URL' ] )
-    global[ 'URL' ] = MockURL;
-else if ( !URL[ 'createObjectURL' ] )
-    URL[ 'createObjectURL' ] = MockURL.createObjectURL;
-
 
 test( "Task Runner Get Data Types", () =>
 {
@@ -20,6 +10,8 @@ test( "Task Runner Get Data Types", () =>
     expect( tr.getDataType( "Test" ) ).toMatchObject( { type: "String", length: 4 } );
     expect( tr.getDataType( 50 ) ).toMatchObject( { type: "Number" } );
     expect( tr.getDataType( false ) ).toMatchObject( { type: "Boolean" } );
+
+    tr.stop();
 } );
 
 test( "Task Runner Set / Get Data", () =>
@@ -30,7 +22,8 @@ test( "Task Runner Set / Get Data", () =>
 
     return tr.setData( 'test', 'Test' )
         .then( ret => tr.getData( 'test' ) )
-        .then( data => expect( data ).toBe( "Test" ) );
+        .then( ( [ data ] ) => expect( data ).toBe( "Test" ) )
+        .then( () => tr.stop() );
 } );
 
 test( "Task Runner Set / Get Multiple Data", () => 
@@ -41,15 +34,13 @@ test( "Task Runner Set / Get Multiple Data", () =>
 
     return tr.setData( 'test1', "Test One" )
         .then( res => tr.setData( 'test2', "Test Two" ) )
-        .then( res => Promise.all( [
-            tr.getData( 'test1' ),
-            tr.getData( 'test2' ),
-        ] ) )
+        .then( res => tr.getData( [ 'test1', 'test2' ] ) )
         .then( ( [ res1, res2 ] ) =>
         {
             expect( res1 ).toBe( "Test One" );
             expect( res2 ).toBe( "Test Two" );
-        } );
+        } )
+        .then( () => tr.stop() );
 } );
 
 test( "Task Runner Run Basic Task", () =>
@@ -60,13 +51,14 @@ test( "Task Runner Run Basic Task", () =>
 
     return tr.setData( 'test', "Test" )
         .then( res => tr.runTask( 'test', ( dat ) => dat + " Is Good!" ) )
-        .then( res => expect( res ).toBe( "Test Is Good!" ) );
+        .then( res => expect( res ).toBe( "Test Is Good!" ) )
+        .then( () => tr.stop() );
 } );
 
 
 const ComplexDataTask = ( data: string[] ) =>
 {
-    return data.filter( e => e !== undefined ).map( ( e, i, a ) => `${ e }:${ i }` );
+    return data.filter( e => !( e === void 0 || e === null ) ).map( ( e, i, a ) => `${ e }:${ i }` );
 };
 
 const GetBigArr = ( arrSize, arrElements = arrSize ) =>
@@ -100,5 +92,6 @@ test( "Task Runner Run 'Complex' Task", () =>
 
     return tr.setData( 'test', arr )
         .then( res => tr.runTask<string[]>( 'test', ComplexDataTask ) )
-        .then( ret => expect( ret.length ).toBe( arrElements ) );
+        .then( ret => expect( ret.length ).toBe( arrElements ) )
+        .then( () => tr.stop() );
 } );

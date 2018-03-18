@@ -9,7 +9,7 @@ export default ( self ) =>
         return new Function( `return ( ${ funcStr } )` )();
     }
 
-    self.onmessage = function TaskRunnerOnMessage ( e: MessageEvent ) 
+    self.onmessage = function TaskRunnerWorkerOnMessage ( e: MessageEvent ) 
     {
         reply( handleMessage( e.data ) );
     };
@@ -17,7 +17,6 @@ export default ( self ) =>
     function reply ( messPromise: Promise<[ string, any ]> )
     {
         messPromise
-
             .then( mess => self.postMessage( {
                 type: MessageTypes.Worker_TaskDone,
                 taskID: mess[ 0 ],
@@ -61,31 +60,41 @@ export default ( self ) =>
         } );
     }
 
-    function getDataMessage ( mess: Messages.Host_GetData ): Promise<[ string, any ]>
+    function getDataMessage<T>( mess: Messages.Host_GetData ): Promise<[ string, T[] ]>
     {
-        let { dataName, taskID } = mess;
+        let { dataNames, taskID } = mess;
 
         return new Promise( ( res, rej ) =>
         {
-            if ( dataStore[ dataName ] === void 0 )
-                return rej( new ReferenceError( `No data with ${ dataName } exists` ) );
-            else
-                return res( [ taskID, dataStore[ dataName ] ] );
+            let ret: T[] = [];
+
+            for ( let dN of dataNames )
+                if ( dataStore[ dN ] === void 0 )
+                    return rej( new ReferenceError( `No data with ${ dataNames } exists` ) );
+                else
+                    ret.push( dataStore[ dN ] );
+
+            return res( [ taskID, ret ] );
         } );
     }
 
     function runTaskMessage ( mess: Messages.Host_RunTask ): Promise<[ string, any ]>
     {
-        let { dataName, task, taskID } = mess;
+        let { dataNames, task, taskID } = mess;
 
         return new Promise( ( res, rej ) =>
         {
             let taskFunc = getFuncFromStr( task );
 
-            if ( dataStore[ dataName ] === void 0 )
-                return rej( new ReferenceError( `No data with ${ dataName } exists` ) );
-            else
-                return res( [ taskID, taskFunc( dataStore[ dataName ] ) ] );
+            let args = [];
+
+            for ( let dN of dataNames )
+                if ( dataStore[ dN ] === void 0 )
+                    return rej( new ReferenceError( `No data with ${ dataNames } exists` ) );
+                else
+                    args.push( dataStore[ dN ] );
+
+            return res( [ taskID, taskFunc( ...args ) ] );
         } );
     }
-};
+}
