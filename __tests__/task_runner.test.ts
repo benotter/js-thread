@@ -11,7 +11,7 @@ test( "Task Runner Get Data Types", () =>
     expect( tr.getDataType( 50 ) ).toMatchObject( { type: "Number" } );
     expect( tr.getDataType( false ) ).toMatchObject( { type: "Boolean" } );
 
-    tr.stop();
+    tr.stopTaskWorker();
 } );
 
 test( "Task Runner Set / Get Data", () =>
@@ -23,7 +23,7 @@ test( "Task Runner Set / Get Data", () =>
     return tr.setData( 'test', 'Test' )
         .then( ret => tr.getData( 'test' ) )
         .then( ( [ data ] ) => expect( data ).toBe( "Test" ) )
-        .then( () => tr.stop() );
+        .then( () => tr.stopTaskWorker() );
 } );
 
 test( "Task Runner Set / Get Multiple Data", () => 
@@ -40,7 +40,7 @@ test( "Task Runner Set / Get Multiple Data", () =>
             expect( res1 ).toBe( "Test One" );
             expect( res2 ).toBe( "Test Two" );
         } )
-        .then( () => tr.stop() );
+        .then( () => tr.stopTaskWorker() );
 } );
 
 test( "Task Runner Run Basic Task", () =>
@@ -52,7 +52,7 @@ test( "Task Runner Run Basic Task", () =>
     return tr.setData( 'test', "Test" )
         .then( res => tr.runTask( 'test', ( dat ) => dat + " Is Good!" ) )
         .then( res => expect( res ).toBe( "Test Is Good!" ) )
-        .then( () => tr.stop() );
+        .then( () => tr.stopTaskWorker() );
 } );
 
 
@@ -93,7 +93,7 @@ test( "Task Runner Run 'Complex' Task", () =>
     return tr.setData( 'test', arr )
         .then( res => tr.runTask<string[]>( 'test', ComplexDataTask ) )
         .then( ret => expect( ret.length ).toBe( arrElements ) )
-        .then( () => tr.stop() );
+        .then( () => tr.stopTaskWorker() );
 } );
 
 test( "Task Runner Run Multi-Data Task", () =>
@@ -114,7 +114,7 @@ test( "Task Runner Run Multi-Data Task", () =>
         .then( () => tr.setData( 'names', Names ) )
         .then( () => tr.runTask( [ 'ids', 'names' ], ( ids, names ) => [ ...ids, ...names ] ) )
         .then( ret => expect( ret ).toMatchObject( [ ...IDs, ...Names ] ) )
-        .then( ()=> tr.stop());
+        .then( ()=> tr.stopTaskWorker());
 } );
 
 test( "Task Runner run Map Task", () =>
@@ -132,5 +132,5 @@ test( "Task Runner run Map Task", () =>
     return tr.setData( 'names', Names )
         .then( () => tr.runMapTask( 'names', ( e, i, d ) => i.toString() + " : " + e ) )
         .then( ret => expect( ret ).toMatchObject( testObj ) )
-        .then( ()=> tr.stop());
+        .then( ()=> tr.stopTaskWorker());
 } );

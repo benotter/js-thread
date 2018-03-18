@@ -67,8 +67,15 @@ export class TaskRunner
 
     private _childScriptPath = `${ __dirname }${ sep }task_runner_child_proc`;
 
-    constructor ()
+    constructor()
     {
+        this.initTaskWorker();
+    }
+
+    private initTaskWorker ()
+    {
+        this.stopTaskWorker();
+
         if ( global[ 'Worker' ] )
         {
             this.workerType = TaskRunnerWorkerType.WebWorker;
@@ -86,15 +93,23 @@ export class TaskRunner
 
             ( this.taskWorker as ChildProcess ).on( 'message', ( data ) => this.onMessage( data as MessageEvent ) );
             ( this.taskWorker as ChildProcess ).on( 'error', ( error ) => this.onError( { error } as ErrorEvent ) );
+
+            process.on( 'SIGTERM', () => ( this.taskWorker as ChildProcess ).kill() );
+            process.on( 'SIGINT', () => ( this.taskWorker as ChildProcess ).kill() );
         }
     }
 
-    public stop ()
+    public stopTaskWorker ()
     {
+        if ( !this.taskWorker )
+            return;
+
         if ( this.workerType === TaskRunnerWorkerType.WebWorker )
             ( this.taskWorker as Worker ).terminate();
         else
             ( this.taskWorker as ChildProcess ).kill();
+
+        this.taskWorker = null;
     }
 
     public sendData ( mess: Mess.Base )
@@ -118,7 +133,11 @@ export class TaskRunner
         let task = this.taskQueue.get( taskID );
 
         if ( !task )
+        {
+            console.log( error );
             throw new ReferenceError( `Task ID ${ taskID } not found` );
+        }
+
 
         task.reject( error );
         this.taskQueue.delete( taskID );
@@ -137,7 +156,6 @@ export class TaskRunner
     private onError ( e: ErrorEvent )
     {
         let { taskID, error } = e.error as Mess.Worker_TaskError;
-
         if ( taskID )
             this.failTask( taskID, error );
         else

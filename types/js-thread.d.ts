@@ -75,7 +75,8 @@ declare module '@otter-co/js-thread/lib/task_runner' {
 	    private workerType;
 	    private _childScriptPath;
 	    constructor();
-	    stop(): void;
+	    private initTaskWorker();
+	    stopTaskWorker(): void;
 	    sendData(mess: Mess.Base): void;
 	    private completeTask(taskID, data);
 	    private failTask(taskID, error);

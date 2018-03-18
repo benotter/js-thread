@@ -1,6 +1,6 @@
 {
     "name": "@otter-co/js-thread",
-    "version": "1.1.2",
+    "version": "1.1.4",
     "description": "Run simple functions (without closures) against large-ish data-sets in seperate threads.",
     "main": "index.js",
     "types": "types/js-thread.d.ts",

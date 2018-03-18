@@ -7,5 +7,5 @@ test( "Index Create TaskRunner", () =>
 
     expect( tr ).toBeInstanceOf( TaskRunner );
 
-    tr.stop();
+    tr.stopTaskWorker();
 } );
