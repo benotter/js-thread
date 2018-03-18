@@ -43,6 +43,9 @@ export default ( self = window[ 'self' ] ) =>
             case MessageTypes.Host_RunTask:
                 return runTaskMessage( mess as Messages.Host_RunTask );
 
+            case MessageTypes.Host_RunMapTask:
+                return runMapTaskMessage( mess as Messages.Host_RunMapTask );
+
             default:
                 return Promise.reject( "Unknown Message Type" );
         }
@@ -70,7 +73,7 @@ export default ( self = window[ 'self' ] ) =>
 
             for ( let dN of dataNames )
                 if ( dataStore[ dN ] === void 0 )
-                    return rej( new ReferenceError( `No data with ${ dataNames } exists` ) );
+                    return rej( new ReferenceError( `No data with name ${ dN } exists` ) );
                 else
                     ret.push( dataStore[ dN ] );
 
@@ -90,11 +93,26 @@ export default ( self = window[ 'self' ] ) =>
 
             for ( let dN of dataNames )
                 if ( dataStore[ dN ] === void 0 )
-                    return rej( new ReferenceError( `No data with ${ dataNames } exists` ) );
+                    return rej( new ReferenceError( `No data with name ${ dN } exists` ) );
                 else
                     args.push( dataStore[ dN ] );
 
             return res( [ taskID, taskFunc( ...args ) ] );
+        } );
+    }
+
+    function runMapTaskMessage ( mess: Messages.Host_RunMapTask ): Promise<[ string, any ]>
+    {
+        let { dataName, task, taskID } = mess;
+
+        return new Promise( ( res, rej ) =>
+        {
+            let taskFunc = getFuncFromStr( task );
+
+            if ( dataStore[ dataName ] === void 0 )
+                return rej( new ReferenceError( `No data with name ${ dataName } exists` ) )
+            else
+                return res( [ taskID, dataStore[ dataName ].map( taskFunc ) ] );
         } );
     }
 }

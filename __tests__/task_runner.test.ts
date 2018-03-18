@@ -95,3 +95,40 @@ test( "Task Runner Run 'Complex' Task", () =>
         .then( ret => expect( ret.length ).toBe( arrElements ) )
         .then( () => tr.stop() );
 } );
+
+test( "Task Runner Run Multi-Data Task", () =>
+{
+    expect.assertions( 1 );
+
+    let IDs = [
+        1, 2, 3, 4, 5
+    ];
+
+    let Names = [
+        "Mark", "Stan", "Shelly", "Linda", "SkyLord"
+    ];
+
+    let tr = new TaskRunner();
+
+    return tr.setData( 'ids', IDs )
+        .then( () => tr.setData( 'names', Names ) )
+        .then( () => tr.runTask( [ 'ids', 'names' ], ( ids, names ) => [ ...ids, ...names ] ) )
+        .then( ret => expect( ret ).toMatchObject( [ ...IDs, ...Names ] ) );
+} );
+
+test( "Task Runner run Map Task", () =>
+{
+    expect.assertions( 1 );
+
+    let Names = [
+        "Mark", "Stan", "Shelly", "Linda", "SkyLord"
+    ];
+
+    let testObj = Names.map( ( e, i ) => i + " : " + e );
+
+    let tr = new TaskRunner();
+
+    return tr.setData( 'names', Names )
+        .then( () => tr.runMapTask( 'names', ( e, i, d ) => i.toString() + " : " + e ) )
+        .then( ret => expect( ret ).toMatchObject( testObj ) );
+} );

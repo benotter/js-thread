@@ -224,5 +224,33 @@ export class TaskRunner
             } as Mess.Host_RunTask );
         } );
     }
+
+    public runMapTask<T>( dataName: string, taskFunc: ( element: any, index: any, data: any ) => T ): Promise<T[]>
+    {
+        if ( this.data[ dataName ] === void 0 )
+            throw new ReferenceError( `Data with the name ${ dataName } does not exist` );
+        else if ( !( this.data[ dataName ].type === "Array" || this.data[ dataName ].type === "String" ) )
+            throw new TypeError( `Data with name ${ dataName } is not an Array or a String!` );
+
+        return new Promise( ( res, rej ) =>
+        {
+            let taskStr = util.getNoEditFuncString( taskFunc );
+
+            let task = {
+                id: uuid.v4(),
+                resolve: res,
+                reject: rej,
+            } as TQTask;
+
+            this.taskQueue.set( task.id, task );
+
+            this.sendData( {
+                type: MessageTypes.Host_RunMapTask,
+                taskID: task.id,
+                dataName,
+                task: taskStr,
+            } as Mess.Host_RunMapTask );
+        } );
+    }
 }
 
