@@ -12,91 +12,11 @@ export type TQTask = {
 export class TaskRunner
 {
     public taskWorker: Worker;
-    public data: { [ dataName: string ]: DataType };
+    public data: { [ dataName: string ]: DataType } = {};
 
-    public taskQueue: Map<string, TQTask> = new Map<string, TQTask>();
+    private taskQueue: Map<string, TQTask> = new Map<string, TQTask>();
 
-    constructor ()
-    {
-        this.taskWorker = new Worker( util.getFuncString<typeof taskRunnerFunc>( taskRunnerFunc ) );
-
-        this.taskWorker.onmessage = ( e ) => this.onMessage( e );
-        this.taskWorker.onerror = ( e ) => this.onError( e );
-    }
-
-    private completeTask ( taskID, data )
-    {
-        let task = this.taskQueue.get( taskID );
-        task.resolve( data );
-        this.taskQueue.delete( taskID );
-    }
-
-    private failTask( taskID, error )
-    {
-        let task = this.taskQueue.get(taskID);
-        task.reject( error );
-        this.taskQueue.delete( taskID );
-    }
-
-    private onMessage ( e )
-    {
-
-    }
-
-    private onError ( e )
-    {
-
-    }
-
-
-
-    public setData ( name: string, data: any[] | any | string | number | boolean ): Promise<any>
-    {
-        let datType = this.getDataType( data );
-
-        return new Promise( ( res, rej ) =>
-        {
-            let task = {
-                id: uuid.v4(),
-                resolve: res,
-                reject: rej,
-            } as TQTask;
-
-            this.taskWorker.postMessage( {
-                type: MessageTypes.Host_SetData,
-                taskID: task.id,
-
-                dataName: name,
-                data,
-            } as Mess.Host_SetData );
-        } );
-    }
-
-    public getData<T = any>( name: string ): Promise<any>
-    {
-        if ( this.data[ name ] === void 0 )
-            return null;
-
-        return new Promise( ( res, rej ) =>
-        {
-            let task = {
-                id: uuid.v4(),
-                resolve: res,
-                reject: rej,
-            } as TQTask;
-
-            this.taskWorker.postMessage( {
-                type: MessageTypes.Host_GetData,
-                taskID: task.id,
-
-                dataName: name,
-            } as Mess.Host_GetData );
-        } );
-    }
-
-
-
-    private getDataType ( data )
+    public getDataType ( data )
     {
         let localDat: DataType = {
             type: "Object"
@@ -125,6 +45,123 @@ export class TaskRunner
         }
 
         return localDat;
+    }
+
+    constructor ()
+    {
+        this.taskWorker = new Worker( util.getFuncString<typeof taskRunnerFunc>( taskRunnerFunc ) );
+
+        this.taskWorker.onmessage = ( e ) => this.onMessage( e );
+        this.taskWorker.onerror = ( e ) => this.onError( e );
+    }
+
+    private completeTask ( taskID, data )
+    {
+        let task = this.taskQueue.get( taskID );
+        task.resolve( data );
+        this.taskQueue.delete( taskID );
+    }
+
+    private failTask ( taskID, error )
+    {
+        let task = this.taskQueue.get( taskID );
+
+        if ( !task )
+            throw new ReferenceError( `Task ID ${ taskID } not found` );
+
+        task.reject( error );
+        this.taskQueue.delete( taskID );
+    }
+
+    private onMessage ( e: MessageEvent )
+    {
+        let { type, taskID } = e.data as Mess.Base;
+
+        if ( type === MessageTypes.Worker_TaskDone )
+            this.completeTask( taskID, ( e.data as Mess.Worker_TaskDone ).returnData );
+        else if ( type === MessageTypes.Worker_TaskError )
+            this.failTask( taskID, ( e.data as Mess.Worker_TaskError ).error );
+    }
+
+    private onError ( e: ErrorEvent )
+    {
+        let { taskID, error } = e.error as Mess.Worker_TaskError;
+
+        if ( taskID )
+            this.failTask( taskID, error );
+        else
+            console.log( error, e, );
+    }
+
+    public setData ( dataName: string, data: any[] | any | string | number | boolean ): Promise<any>
+    {
+        return new Promise( ( res, rej ) =>
+        {
+            let task = {
+                id: uuid.v4(),
+                resolve: res,
+                reject: rej,
+            } as TQTask;
+
+            this.data[ dataName ] = this.getDataType( data );
+            this.taskQueue.set( task.id, task );
+
+            this.taskWorker.postMessage( {
+                type: MessageTypes.Host_SetData,
+                taskID: task.id,
+                dataName,
+                data,
+            } as Mess.Host_SetData );
+        } );
+    }
+
+    public getData<T = any>( dataName: string ): Promise<any>
+    {
+        if ( this.data[ dataName ] === void 0 )
+            throw new ReferenceError( `Data with the name ${ dataName } does not exist` );
+
+        return new Promise( ( res, rej ) =>
+        {
+            let task = {
+                id: uuid.v4(),
+                resolve: res,
+                reject: rej,
+            } as TQTask;
+
+            this.taskQueue.set( task.id, task );
+
+            this.taskWorker.postMessage( {
+                type: MessageTypes.Host_GetData,
+                taskID: task.id,
+                dataName,
+            } as Mess.Host_GetData );
+        } );
+    }
+
+    public runTask<T>( dataName: string, taskFunc: ( data: any ) => any ): Promise<T>
+    {
+        if ( this.data[ dataName ] === void 0 )
+            throw new ReferenceError( `Data with the name ${ dataName } does not exist` );
+
+        return new Promise( ( res, rej ) =>
+        {
+            let taskStr = util.getNoEditFuncString( taskFunc );
+
+            let task = {
+                id: uuid.v4(),
+                resolve: res,
+                reject: rej,
+            } as TQTask;
+
+            this.taskQueue.set( task.id, task );
+
+            this.taskWorker.postMessage( {
+                type: MessageTypes.Host_RunTask,
+                taskID: task.id,
+                dataName,
+                task: taskStr,
+            } );
+        } );
     }
 }
 
