@@ -4,11 +4,19 @@
     "description": "Run simple functions (without closures) against large-ish data-sets in seperate threads.",
     "main": "index.js",
     "types":"types/js-thread.d.ts",
+    "files": [
+        "!**/*.ts",
+        "types/js-thread.d.ts",
+        "index.js",
+        "lib/**/*.js",
+        "tests/*.js"
+    ],
     "scripts": {
         "test": "jest --env=jsdom",
         "test-ci": "set CI=true && jest --env=jsdom --coverage --testResultsProcessor=\"jest-junit\" --coverageDirectory=\"coverage\"",
-        "build-types": "dts-generator --name @otter-co/js-thread --project ./ --out types/js-thread.d.ts --exclude **/tests/** --exclude node_modules/**",
-        "build": "tsc -p ."
+        "build-types": "dts-generator --name @otter-co/js-thread --project ./ --out types/js-thread.d.ts --exclude **/tests/** --exclude node_modules/** --exclude **/*.d.ts",
+        "build": "tsc -p .",
+        "prepack": "npm run build"
     },
     "repository": {
         "type": "git",

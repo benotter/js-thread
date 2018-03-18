@@ -49,6 +49,10 @@ declare module '@otter-co/js-thread/lib/task_runner' {
 	    resolve: (...data: any[]) => any;
 	    reject: (...err: any[]) => any;
 	};
+	export interface DataType {
+	    type: "Array" | "Object" | "String" | "Number" | "Boolean";
+	    length?: number;
+	}
 	export class TaskRunner {
 	    taskWorker: Worker;
 	    data: {
@@ -64,10 +68,6 @@ declare module '@otter-co/js-thread/lib/task_runner' {
 	    setData(dataName: string, data: any[] | any | string | number | boolean): Promise<any>;
 	    getData<T = any>(dataName: string): Promise<any>;
 	    runTask<T>(dataName: string, taskFunc: (data: any) => any): Promise<T>;
-	}
-	export interface DataType {
-	    type: "Array" | "Object" | "String" | "Number" | "Boolean";
-	    length?: number;
 	}
 
 }
