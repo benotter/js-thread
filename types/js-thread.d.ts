@@ -71,7 +71,7 @@ declare module '@otter-co/js-thread/lib/task_runner' {
 	}
 
 }
-declare module '@otter-co/js-thread/index' {
+declare module '@otter-co/js-thread' {
 	import { TaskRunner } from '@otter-co/js-thread/lib/task_runner';
 	export function createTaskRunner(): TaskRunner;
 
