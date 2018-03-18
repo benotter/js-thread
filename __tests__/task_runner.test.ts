@@ -113,7 +113,8 @@ test( "Task Runner Run Multi-Data Task", () =>
     return tr.setData( 'ids', IDs )
         .then( () => tr.setData( 'names', Names ) )
         .then( () => tr.runTask( [ 'ids', 'names' ], ( ids, names ) => [ ...ids, ...names ] ) )
-        .then( ret => expect( ret ).toMatchObject( [ ...IDs, ...Names ] ) );
+        .then( ret => expect( ret ).toMatchObject( [ ...IDs, ...Names ] ) )
+        .then( ()=> tr.stop());
 } );
 
 test( "Task Runner run Map Task", () =>
@@ -130,5 +131,6 @@ test( "Task Runner run Map Task", () =>
 
     return tr.setData( 'names', Names )
         .then( () => tr.runMapTask( 'names', ( e, i, d ) => i.toString() + " : " + e ) )
-        .then( ret => expect( ret ).toMatchObject( testObj ) );
+        .then( ret => expect( ret ).toMatchObject( testObj ) )
+        .then( ()=> tr.stop());
 } );
