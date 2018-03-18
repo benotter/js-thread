@@ -9,6 +9,12 @@ export type TQTask = {
     reject: ( ...err: any[] ) => any,
 };
 
+export interface DataType 
+{
+    type: "Array" | "Object" | "String" | "Number" | "Boolean",
+    length?: number;
+}
+
 export class TaskRunner
 {
     public taskWorker: Worker;
@@ -165,8 +171,3 @@ export class TaskRunner
     }
 }
 
-interface DataType 
-{
-    type: "Array" | "Object" | "String" | "Number" | "Boolean",
-    length?: number;
-}

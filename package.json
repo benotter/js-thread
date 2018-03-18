@@ -3,9 +3,11 @@
     "version": "1.0.0",
     "description": "Run simple functions (without closures) against large-ish data-sets in seperate threads.",
     "main": "index.js",
+    "types":"types/js-thread.d.ts",
     "scripts": {
         "test": "jest --env=jsdom",
         "test-ci": "set CI=true && jest --env=jsdom --coverage --testResultsProcessor=\"jest-junit\" --coverageDirectory=\"coverage\"",
+        "build-types": "dts-generator --name @otter-co/js-thread --project ./ --out types/js-thread.d.ts --exclude **/tests/** --exclude node_modules/**",
         "build": "tsc -p ."
     },
     "repository": {
@@ -22,6 +24,7 @@
         "@types/jest": "^22.2.0",
         "@types/node": "^9.4.7",
         "@types/uuid": "^3.4.3",
+        "dts-generator": "^2.1.0",
         "jest": "^22.4.2",
         "typescript": "^2.7.2",
         "jest-junit": "^3.6.0"
@@ -36,7 +39,7 @@
         ]
     },
     "jest-junit": {
-        "suiteName": "Otter-Co HomeSite Tests",
+        "suiteName": "Otter-Co js-thread Tests",
         "output": "coverage\\TEST-Report.xml",
         "classNameTemplate": "{filename}",
         "titleTemplate": "{title}",
