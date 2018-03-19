@@ -114,7 +114,7 @@ test( "Task Runner Run Multi-Data Task", () =>
         .then( () => tr.setData( 'names', Names ) )
         .then( () => tr.runTask( [ 'ids', 'names' ], ( ids, names ) => [ ...ids, ...names ] ) )
         .then( ret => expect( ret ).toMatchObject( [ ...IDs, ...Names ] ) )
-        .then( ()=> tr.stopTaskWorker());
+        .then( () => tr.stopTaskWorker() );
 } );
 
 test( "Task Runner run Map Task", () =>
@@ -132,5 +132,24 @@ test( "Task Runner run Map Task", () =>
     return tr.setData( 'names', Names )
         .then( () => tr.runMapTask( 'names', ( e, i, d ) => i.toString() + " : " + e ) )
         .then( ret => expect( ret ).toMatchObject( testObj ) )
-        .then( ()=> tr.stopTaskWorker());
+        .then( () => tr.stopTaskWorker() );
+} );
+
+test( "Task Runner Run Data Task", () =>
+{
+    expect.assertions( 1 );
+
+    let words = [
+        "Hi",
+        "There,",
+        "Friend!"
+    ];
+
+    let expctRes = words.join( ' ' );
+
+    let tr = new TaskRunner();
+
+    return tr.runDataTask( [ words ], ( words ) => { return words.join( ' ' ) } )
+        .then( ret => expect( ret ).toBe( expctRes ) )
+        .then( () => tr.stopTaskWorker() );
 } );

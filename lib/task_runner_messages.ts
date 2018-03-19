@@ -2,8 +2,10 @@ export const enum MessageTypes
 {
     Host_SetData,
     Host_GetData,
+
     Host_RunTask,
     Host_RunMapTask,
+    Host_RunDataTask,
 
     Worker_TaskDone,
     Worker_TaskError,
@@ -18,6 +20,8 @@ export namespace Messages
 
     export type Host_RunTask = Base & { dataNames: string[], task: string };
     export type Host_RunMapTask = Base & { dataName: string, task: string };
+    
+    export type Host_RunDataTask = Base & { data: any[], task: string };
 
 
     export type Worker_TaskDone = Base & { returnData: any };

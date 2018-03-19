@@ -67,7 +67,7 @@ export class TaskRunner
 
     private _childScriptPath = `${ __dirname }${ sep }task_runner_child_proc`;
 
-    constructor()
+    constructor ()
     {
         this.initTaskWorker();
     }
@@ -135,7 +135,7 @@ export class TaskRunner
         if ( !task )
         {
             console.log( error );
-            throw new ReferenceError( `Task ID ${ taskID } not found` );
+            throw new ReferenceError( `Task ID ${ taskID } not found ${ error }` );
         }
 
 
@@ -268,6 +268,32 @@ export class TaskRunner
                 dataName,
                 task: taskStr,
             } as Mess.Host_RunMapTask );
+        } );
+    }
+
+    public runDataTask<T>( data: any | any[], taskFunc: ( ...data: any[] ) => any ): Promise<T>
+    {
+        if ( !Array.isArray( data ) )
+            data = [ data ];
+
+        return new Promise( ( res, rej ) =>
+        {
+            let taskStr = util.getNoEditFuncString( taskFunc );
+
+            let task = {
+                id: uuid.v4(),
+                resolve: res,
+                reject: rej,
+            } as TQTask;
+
+            this.taskQueue.set( task.id, task );
+
+            this.sendData( {
+                type: MessageTypes.Host_RunDataTask,
+                taskID: task.id,
+                data,
+                task: taskStr,
+            } as Mess.Host_RunDataTask );
         } );
     }
 }

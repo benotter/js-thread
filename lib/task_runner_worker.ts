@@ -25,7 +25,7 @@ export default ( self = window[ 'self' ] ) =>
 
             .catch( err => self.postMessage( {
                 type: MessageTypes.Worker_TaskError,
-                error: err
+                error: ( err && err.message ) || err,
             } as Messages.Worker_TaskError, void 0
             ) );
     }
@@ -45,6 +45,9 @@ export default ( self = window[ 'self' ] ) =>
 
             case MessageTypes.Host_RunMapTask:
                 return runMapTaskMessage( mess as Messages.Host_RunMapTask );
+
+            case MessageTypes.Host_RunDataTask:
+                return runDataTaskMessage( mess as Messages.Host_RunDataTask );
 
             default:
                 return Promise.reject( "Unknown Message Type" );
@@ -113,6 +116,17 @@ export default ( self = window[ 'self' ] ) =>
                 return rej( new ReferenceError( `No data with name ${ dataName } exists` ) )
             else
                 return res( [ taskID, dataStore[ dataName ].map( taskFunc ) ] );
+        } );
+    }
+
+    function runDataTaskMessage ( mess: Messages.Host_RunDataTask ): Promise<[ string, any ]>
+    {
+        let { data, task, taskID } = mess;
+
+        return new Promise( ( res, rej ) => 
+        {
+            let taskFunc = getFuncFromStr( task );
+            return res( [ taskID, taskFunc( ...data ) ] );
         } );
     }
 }
