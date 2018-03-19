@@ -7,5 +7,6 @@
         "**/.DS_Store": true,
         "**/*.js":{ "when": "$(basename).ts" },
         "**/*.map":{ "when": "$(basename)" }
-    }
+    },
+    "typescript.tsdk": "node_modules\\typescript\\lib"
 }
