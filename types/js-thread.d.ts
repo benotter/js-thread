@@ -10,8 +10,9 @@ declare module '@otter-co/js-thread/lib/task_runner_messages' {
 	    Host_GetData = 1,
 	    Host_RunTask = 2,
 	    Host_RunMapTask = 3,
-	    Worker_TaskDone = 4,
-	    Worker_TaskError = 5,
+	    Host_RunDataTask = 4,
+	    Worker_TaskDone = 5,
+	    Worker_TaskError = 6,
 	}
 	export namespace Messages {
 	    type Base = {
@@ -31,6 +32,10 @@ declare module '@otter-co/js-thread/lib/task_runner_messages' {
 	    };
 	    type Host_RunMapTask = Base & {
 	        dataName: string;
+	        task: string;
+	    };
+	    type Host_RunDataTask = Base & {
+	        data: any[];
 	        task: string;
 	    };
 	    type Worker_TaskDone = Base & {
@@ -86,11 +91,11 @@ declare module '@otter-co/js-thread/lib/task_runner' {
 	    getData<T = any>(dataNames: string | string[]): Promise<T[]>;
 	    runTask<T>(dataNames: string | string[], taskFunc: (...data: any[]) => any): Promise<T>;
 	    runMapTask<T>(dataName: string, taskFunc: (element: any, index: any, data: any) => T): Promise<T[]>;
+	    runDataTask<T>(data: any | any[], taskFunc: (...data: any[]) => any): Promise<T>;
 	}
 
 }
 declare module '@otter-co/js-thread' {
 	import { TaskRunner } from '@otter-co/js-thread/lib/task_runner';
 	export function createTaskRunner(): TaskRunner;
-
 }
